@@ -7,7 +7,7 @@
         </form>
         <section class="list" v-if="!noSearchShops">
             <ul class="list_container">
-                <router-link :to="{path:'/shop', query:{id:item.id}}" tag="li"  class="list_li"
+                <router-link :to="{path:'/shop', query:{id:item.id}}" tag="li" class="list_li"
                              v-for="item in searchShops" :key="item.id">
                     <section class="item_left">
                         <img :src="imgBaseUrl + item.image_path" class="restaurant_img">
@@ -40,7 +40,7 @@
             return {
                 keyword: '',
                 imgBaseUrl: 'http://cangdu.org:8001/img/',
-                noSearchShops: false
+                noSearchShops: false,
             }
         },
         components: {HeaderTop},
@@ -51,17 +51,25 @@
             search() {
                 const keyword = this.keyword.trim()
                 if (keyword) {
-                    this.$store.dispatch('searchShops', keyword)
+                    this.$store.dispatch('searchShops',keyword)
                 }
-            }
+            },
         },
         watch: {
             searchShops(val) {
                 if (!val.length) {
                     this.noSearchShops = true
-                } else {
+                } else{
                     this.noSearchShops = false
                 }
+            },
+            //当keyword值被清空后，如果没搜索到的话，把显示无搜索结果隐藏，把searchShops变为空数组，实现清空搜索结果
+            keyword(val){
+                if (val==''){
+                    this.noSearchShops = false
+                    this.$store.state.searchShops.length=0
+                }
+                console.log(typeof this.keyword)
             }
         }
     }
