@@ -1,25 +1,27 @@
 <template>
     <section class="profile">
         <header-top title="我的"/>
+        <!--登录区域-->
         <section class="profile-number">
-            <router-link to="/login" class="profile-link">
+            <router-link :to="userInfo._id ? '' : '/login' " class="profile-link">
                 <div class="profile_image">
                     <i class="iconfont icon-icon-test"></i>
                 </div>
                 <div class="user-info">
-                    <p class="user-info-top">登录/注册</p>
+                    <p class="user-info-top" v-if="!userInfo.phone">{{userInfo.name || '登录/注册'}}</p>
                     <p>
                         <span class="user-icon">
                             <i class="iconfont icon-icon23"></i>
                         </span>
-                        <span class="icon-mobile-number">暂无绑定手机号</span>
+                        <span class="icon-mobile-number">{{userInfo.phone || '暂无绑定手机号'}}</span>
                     </p>
                 </div>
                 <span class="arrow">
-<i class="iconfont icon-mjiantou-copy"></i>
-</span>
+                    <i class="iconfont icon-mjiantou-copy"></i>
+                </span>
             </router-link>
         </section>
+        <!--余额、优惠、积分-->
         <section class="profile_info_data">
             <ul class="info_data_list">
                 <a href="javascript:" class="info_data_link">
@@ -36,67 +38,85 @@
                 </a>
             </ul>
         </section>
+        <!--订单、积分、会员-->
         <section class="profile_my_order">
             <!-- 我的订单 -->
             <a href='javascript:' class="my_order">
-<span>
-<i class="iconfont icon-dd"></i>
-</span>
+                <span>
+                    <i class="iconfont icon-dd"></i>
+                </span>
                 <div class="my_order_div">
                     <span>我的订单</span>
                     <span class="my_order_icon">
-<i class="iconfont icon-mjiantou-copy"></i>
-</span>
+                        <i class="iconfont icon-mjiantou-copy"></i>
+                    </span>
                 </div>
             </a>
             <!-- 积分商城 -->
             <a href='javascript:' class="my_order">
-<span>
-<i class="iconfont icon-xinlingshouyewuicon-"></i>
-</span>
+                <span>
+                    <i class="iconfont icon-xinlingshouyewuicon-"></i>
+                </span>
                 <div class="my_order_div">
                     <span>积分商城</span>
                     <span class="my_order_icon">
-<i class="iconfont icon-mjiantou-copy"></i>
-</span>
+                        <i class="iconfont icon-mjiantou-copy"></i>
+                    </span>
                 </div>
             </a>
             <!-- 吃了么会员卡 -->
             <a href="javascript:" class="my_order">
-<span>
-<i class="iconfont icon-huiyuan_"></i>
-</span>
+                <span>
+                    <i class="iconfont icon-huiyuan_"></i>
+                </span>
                 <div class="my_order_div">
                     <span>吃了么会员卡</span>
                     <span class="my_order_icon">
-<i class="iconfont icon-mjiantou-copy"></i>
-</span>
+                        <i class="iconfont icon-mjiantou-copy"></i>
+                    </span>
                 </div>
             </a>
         </section>
+        <!--服务-->
         <section class="profile_my_order">
             <!-- 服务中心 -->
             <a href="javascript:" class="my_order">
-<span>
-<i class="iconfont icon-fuwu"></i>
-</span>
+                <span>
+                    <i class="iconfont icon-fuwu"></i>
+                </span>
                 <div class="my_order_div">
                     <span>服务中心</span>
                     <span class="my_order_icon">
-<i class="iconfont icon-mjiantou-copy"></i>
-</span>
+                        <i class="iconfont icon-mjiantou-copy"></i>
+                    </span>
                 </div>
             </a>
+        </section>
+        <!--退出按钮-->
+        <section class="profile_my_order">
+            <mt-button type="danger" style="width: 100%" v-if="userInfo._id" @click="logout">退出登录</mt-button>
         </section>
     </section>
 </template>
 
 <script>
     import HeaderTop from "../../components/HeaderTop/HeaderTop";
+    import {mapState} from 'vuex'
+    import {MessageBox} from 'mint-ui'
 
     export default {
         name: "Order",
-        components: {HeaderTop}
+        components: {HeaderTop},
+        computed:{
+            ...mapState(['userInfo'])
+        },
+        methods:{
+            logout(){
+                MessageBox.confirm('确认退出?').then(action => {
+                    this.$store.dispatch('logout')
+                });
+            }
+        }
     }
 </script>
 

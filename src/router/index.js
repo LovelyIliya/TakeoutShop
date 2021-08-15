@@ -5,6 +5,10 @@ import Order from "../pages/Order/Order";
 import Profile from "../pages/Profile/Profile";
 import Search from "../pages/Search/Search";
 import Login from "../pages/Login/Login";
+import Shop from "../pages/Shop/Shop";
+import ShopGoods from "../pages/Shop/ShopGoods/ShopGoods";
+import ShopInfo from "../pages/Shop/ShopInfo/ShopInfo";
+import ShopRatings from "../pages/Shop/ShopRatings/ShopRatings";
 
 Vue.use(VueRouter)
 
@@ -49,6 +53,26 @@ const routes = [
     {
         path: '/login',
         component: Login
+    },
+
+    {
+        path: '/shop',
+        component: Shop,
+        redirect: '/shop/goods',
+        children:[
+            {
+                path:'goods',
+                component:ShopGoods
+            },
+            {
+                path:'ratings',
+                component:ShopRatings
+            },
+            {
+                path:'info',
+                component:ShopInfo
+            }
+        ]
     }
 ]
 

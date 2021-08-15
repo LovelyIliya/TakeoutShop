@@ -1,44 +1,185 @@
 <template>
     <div class="loginContainer">
         <div class="loginInner">
-            <div class="login_header"><h2 class="login_logo">吃了么</h2>
-                <div class="login_header_title"><a href="javascript:;" class="on">短信登录</a><a
-                        href="javascript:;">密码登录</a></div>
+            <!--软件名和登录方式-->
+            <div class="login_header">
+                <h2 class="login_logo">吃了么</h2>
+                <div class="login_header_title">
+                    <a href="javascript:;" :class="{on:loginWay}" @click="loginWay=true">短信登录</a>
+                    <a href="javascript:;" :class="{on:!loginWay}" @click="loginWay=false">密码登录</a>
+                </div>
             </div>
+            <!--登录表单区域-->
             <div class="login_content">
-                <form>
-                    <div class="on">
-                        <section class="login_message"><input type="tel" maxlength="11" placeholder="手机号">
-                            <button disabled="disabled" class="get_verification">获取验证码</button>
+                <form @submit.prevent="login">
+                    <!--短信登录-->
+                    <div :class="{on:loginWay}">
+                        <!--手机号-->
+                        <section class="login_message">
+                            <input type="tel" maxlength="11" placeholder="手机号" v-model="phone">
+                            <button :disabled="!rightPhone" class="get_verification" :class="{right_phone:rightPhone}"
+                                    @click.prevent="getCode">
+                                {{computeTime ? `已发送(${computeTime}s)` : '获取验证码' }}
+                            </button>
                         </section>
-                        <section class="login_verification"><input type="tel" maxlength="8" placeholder="验证码"></section>
-                        <section class="login_hint"> 温馨提示：未注册吃了么外卖帐号的手机号，登录时将自动注册，且代表已同意 <a
-                                href="javascript:;">《用户服务协议》</a></section>
+                        <!--验证码-->
+                        <section class="login_verification">
+                            <input type="tel" maxlength="8" placeholder="验证码" v-model="code">
+                        </section>
+                        <section class="login_hint">
+                            温馨提示：未注册吃了么外卖帐号的手机号，登录时将自动注册，且代表已同意
+                            <a href="javascript:;">《用户服务协议》</a>
+                        </section>
                     </div>
-                    <div>
+                    <!--密码登录-->
+                    <div :class="{on:!loginWay}">
                         <section>
-                            <section class="login_message"><input type="tel" maxlength="11" placeholder="手机/邮箱/用户名">
+                            <!--账号-->
+                            <section class="login_message">
+                                <input type="text" maxlength="11" placeholder="手机/邮箱/用户名" v-model="name">
                             </section>
-                            <section class="login_verification"><input type="tel" maxlength="8" placeholder="密码">
-                                <div class="switch_button off">
-                                    <div class="switch_circle"></div>
-                                    <span class="switch_text">...</span></div>
+                            <!--密码-->
+                            <section class="login_verification">
+                                <input type="text" maxlength="8" placeholder="密码" v-if="showPwd" v-model="pwd">
+                                <input type="password" maxlength="8" placeholder="密码" v-else v-model="pwd">
+                                <div class="switch_button" :class="showPwd?'on':'off'" @click="showPwd=!showPwd">
+                                    <div class="switch_circle" :class="{right:showPwd}"></div>
+                                </div>
                             </section>
-                            <section class="login_message"><input type="text" maxlength="11" placeholder="验证码"> <img
-                                    class="get_verification" src="./images/captcha.svg" alt="captcha"></section>
+                            <!--验证码-->
+                            <section class="login_message">
+                                <input type="text" maxlength="11" placeholder="验证码" v-model="captcha">
+                                <img class="get_verification" src="http://localhost:4000/captcha" alt="captcha"
+                                     @click="getCaptcha" ref="captcha">
+                            </section>
                         </section>
                     </div>
                     <button class="login_submit">登录</button>
                 </form>
-                <a href="javascript:;" class="about_us">关于我们</a></div>
-            <span href="javascript:" class="go_back" @click="$router.back()"> <i
-                    class="iconfont icon-arrow-left"></i></span></div>
+                <a href="javascript:;" class="about_us">关于我们</a>
+            </div>
+            <!--返回-->
+            <span href="javascript:" class="go_back" @click="$router.back()">
+                <i class="iconfont icon-arrow-left"></i>
+            </span>
+        </div>
+        <AlertTip :alert-text="alertText" v-show="alertShow" @closeTip="closeTip"/>
     </div>
 </template>
 
 <script>
+    import AlertTip from "../../components/AlertTip/AlertTip";
+    import {reqPwdLogin, reqSendCode, reqSmsLogin} from "../../api";
+
     export default {
-        name: "Login"
+        name: "Login",
+        data() {
+            return {
+                loginWay: true, //控制是短信登录还是密码登录
+                phone: '', //手机号
+                computeTime: 0, //倒计时
+                showPwd: false, //是否显示密码
+                pwd: '', //密码
+                code: '', //短信验证码
+                name: '', //用户名
+                captcha: '', //图形验证码
+                alertText: '', //提示文本
+                alertShow: false //提示框的显示与隐藏
+            }
+        },
+        components: {
+            AlertTip
+        },
+        computed: {
+            rightPhone() {
+                return /^1[3|4|5|7|8][0-9]{9}$/.test(this.phone)
+            }
+        },
+        methods: {
+            // 获取短信验证码
+            async getCode() {
+                // 只有为0的时候才能计时
+                // 0为false，取反后为true，开始倒计时后computeTime为true，取反后为false
+                if (!this.computeTime) {
+                    this.computeTime = 30
+                    this.timer = setInterval(() => {
+                        this.computeTime--
+                        if (this.computeTime == 0) {
+                            clearInterval(this.timer)
+                        }
+                    }, 1000)
+                }
+                // 向指定手机号发送短信验证码
+                const result = await reqSendCode(this.phone)
+                if (result.code === 1) {
+                    this.showAlert(result.msg)
+                }
+            },
+            // 显示提示框
+            showAlert(alertText) {
+                this.alertShow = true
+                this.alertText = alertText
+            },
+            // 登录
+            async login() {
+                let result
+                //短信登录
+                if (this.loginWay) {
+                    const {rightPhone, phone, code} = this
+                    if (!rightPhone) {
+                        this.showAlert('手机号不正确')
+                        return
+                    } else if (!/^\d{6}$/.test(code)) {
+                        this.showAlert('验证码必须是6位数字')
+                        return
+                    }
+                    // 发送请求进行短信登录
+                    result = await reqSmsLogin(phone, code)
+
+                    //密码登录
+                } else {
+                    const {name, pwd, captcha} = this
+                    if (!name) {
+                        this.showAlert('请输入用户名')
+                        return
+                    } else if (!pwd) {
+                        this.showAlert('请输入密码')
+                        return
+                    } else if (!captcha) {
+                        this.showAlert('请输入验证码')
+                        return
+                    }
+                    // 发送请求进行密码登录
+                    result = await reqPwdLogin({name, pwd, captcha})
+                }
+                // 停止倒计时
+                if (this.computeTime) {
+                    this.computeTime = 0
+                    clearInterval(this.timer)
+                }
+                // 根据结果处理数据
+                if (result.code === 0) { //登录成功
+                    const user = result.data
+                    this.$store.dispatch('recordUser',user)
+                    this.$router.replace('/profile')
+                } else { //登录失败
+                    const msg = result.msg
+                    this.showAlert(msg)
+                    this.getCaptcha()
+                    this.captcha=''
+                }
+            },
+            // 关闭提示框
+            closeTip() {
+                this.alertShow = false
+                this.alertText = ''
+            },
+            // 获取新的图形验证码
+            getCaptcha() {
+                // 内容需要跟原来不一样才行，所以使用?time=+Date.now()来改变路径
+                this.$refs.captcha.src = 'http://localhost:4000/captcha?time=' + Date.now()
+            }
+        }
     }
 </script>
 
@@ -48,35 +189,44 @@
         width 100%
         height 100%
         background #fff
+
         .loginInner
             padding-top 60px
             width 80%
             margin 0 auto
+
             .login_header
                 .login_logo
                     font-size 40px
                     font-weight bold
                     color #02a774
                     text-align center
+
                 .login_header_title
                     padding-top 40px
                     text-align center
-                    >a
+
+                    > a
                         color #333
                         font-size 14px
                         padding-bottom 4px
+
                         &:first-child
                             margin-right 40px
+
                         &.on
                             color #02a774
                             font-weight 700
                             border-bottom 2px solid #02a774
+
             .login_content
-                >form
-                    >div
+                > form
+                    > div
                         display none
+
                         &.on
                             display block
+
                         input
                             width 100%
                             height 100%
@@ -86,34 +236,45 @@
                             border-radius 4px
                             outline 0
                             font 400 14px Arial
+
                             &:focus
                                 border 1px solid #02a774
+
                         .login_message
                             position relative
                             margin-top 16px
                             height 48px
                             font-size 14px
                             background #fff
+
                             .get_verification
-                                    position absolute
-                                    top 50%
-                                    right 10px
-                                    transform translateY(-50%)
-                                    border 0
-                                    color #ccc
-                                    font-size 14px
-                                    background transparent
+                                position absolute
+                                top 50%
+                                right 10px
+                                transform translateY(-50%)
+                                border 0
+                                color #ccc
+                                font-size 14px
+                                background transparent
+
+                                &.right_phone
+                                    color black
+
                         .login_verification
                             position relative
                             margin-top 16px
                             height 48px
                             font-size 14px
                             background #fff
+
+                            input[type="password"]::-ms-reveal
+                                display none
+
                             .switch_button
                                 font-size 12px
                                 border 1px solid #ddd
                                 border-radius 8px
-                                transition background-color .3s,border-color .3s
+                                transition background-color .3s, border-color .3s
                                 padding 0 6px
                                 width 30px
                                 height 16px
@@ -123,14 +284,14 @@
                                 top 50%
                                 right 10px
                                 transform translateY(-50%)
+
                                 &.off
                                     background #fff
-                                    .switch_text
-                                        float right
-                                        color #ddd
+
                                 &.on
                                     background #02a774
-                                >.switch_circle
+
+                                > .switch_circle
                                     //transform translateX(27px)
                                     position absolute
                                     top -1px
@@ -140,15 +301,21 @@
                                     border 1px solid #ddd
                                     border-radius 50%
                                     background #fff
-                                    box-shadow 0 2px 4px 0 rgba(0,0,0,.1)
+                                    box-shadow 0 2px 4px 0 rgba(0, 0, 0, .1)
                                     transition transform .3s
+
+                                    &.right
+                                        transform translateX(27px)
+
                         .login_hint
                             margin-top 12px
                             color #999
                             font-size 14px
                             line-height 20px
-                            >a
+
+                            > a
                                 color #02a774
+
                     .login_submit
                         display block
                         width 100%
@@ -161,19 +328,22 @@
                         font-size 16px
                         line-height 42px
                         border 0
+
                 .about_us
                     display block
                     font-size 12px
                     margin-top 20px
                     text-align center
                     color #999
+
             .go_back
                 position absolute
                 top 5px
                 left 5px
                 width 30px
                 height 30px
-                >.iconfont
+
+                > .iconfont
                     font-size 25px
                     color #999
 </style>
