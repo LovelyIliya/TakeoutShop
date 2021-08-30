@@ -3,7 +3,7 @@
         <HeaderTop title="订单列表"/>
         <section class="order_no_login">
             <img src="./images/person.png">
-            <div v-if="!userInfo._id">
+            <div  v-if="!userInfo._id">
                 <h3>登录后查看外卖订单</h3>
                 <button @click="$router.replace('/Login')">立即登陆</button>
             </div>
@@ -21,7 +21,7 @@
     export default {
         name: "Profile",
         components: {HeaderTop},
-        computed:{
+        computed: {
             ...mapState(['userInfo'])
         }
     }
@@ -53,4 +53,6 @@
                     outline none
                     border-radius 5px
                     padding 10px 20px
+
+
 </style>

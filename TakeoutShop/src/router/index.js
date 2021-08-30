@@ -9,6 +9,7 @@ import Shop from "../pages/Shop/Shop";
 import ShopGoods from "../pages/Shop/ShopGoods/ShopGoods";
 import ShopInfo from "../pages/Shop/ShopInfo/ShopInfo";
 import ShopRatings from "../pages/Shop/ShopRatings/ShopRatings";
+import Payment from "../pages/Payment/Payment";
 
 Vue.use(VueRouter)
 
@@ -73,6 +74,11 @@ const routes = [
                 component:ShopInfo
             }
         ]
+    },
+
+    {
+        path: '/payment',
+        component: Payment
     }
 ]
 

@@ -49,6 +49,9 @@ export default {
         } else {
             food.count++
         }
+        if (!food.ischecked){
+            Vue.set(food, 'ischecked', true)
+        }
     },
     [DECREMENT_FOOD_COUNT](state, {food}) {
         if (food.count) {
